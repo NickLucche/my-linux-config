@@ -3,5 +3,23 @@
 
 # But not these files...
 !.gitignore
+# Track zsh configuration
 !.zshrc
+!.zshenv
+!.zprofile
+!.zlogin
+!.zlogout
+
+# Oh My Zsh custom directories
 !.oh-my-zsh/
+.oh-my-zsh/**
+.oh-my-zsh/.git/
+
+!.oh-my-zsh/custom/
+!.oh-my-zsh/custom/**
+!.oh-my-zsh/themes/
+!.oh-my-zsh/themes/**
+
+!.oh-my-zsh/plugins/
+!.oh-my-zsh/plugins/**
+
