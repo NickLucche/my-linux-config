@@ -9,6 +9,7 @@
 !.zprofile
 !.zlogin
 !.zlogout
+!.gitconfig
 
 # Oh My Zsh custom directories
 !.oh-my-zsh/

@@ -1,0 +1,14 @@
+[user]
+	email = nlucches@redhat.com
+	name = NickLucche
+[init]
+	defaultBranch = master
+[core]
+	editor = vim
+[alias]
+	pr = "!f() { git fetch $1 pull/$2/head:pr-$2 && git checkout pr-$2; }; f"
+	branches = "branch --format='%(color:bold green)%(HEAD)%(color:reset) %(align:35)%(refname:short)%(end)%09│%09%(commiterdate:relative)'"
+	flog = "!flog() { git log --oneline $@ | fzf --multi --preview 'git -p show --color=always {+1}' --preview-window=right,60% | awk '{print $1}'; }; flog"
+
+[branch]
+	sort = committerdate
