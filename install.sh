@@ -22,3 +22,9 @@ if ! command -v python &> /dev/null && command -v python3 &> /dev/null; then
     echo "python not found, aliasing python3 to python"
     echo "alias python=python3" >> $HOME/.zshrc
 fi
+
+echo "Overwriting .gitconfig"
+cp .gitconfig $HOME/
+
+echo "Copying aliases"
+cp aliases.zsh $HOME/.oh-my-zsh/custom/aliases.zsh
