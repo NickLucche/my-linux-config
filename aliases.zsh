@@ -6,4 +6,8 @@ pv() {
     python -c "import $1; print(getattr($1, '__version__', 'Version not found'))"
 }
 alias gfu='git fetch upstream'
+alias gcou='git checkout upstream/main'
+alias k='kubectl'
+alias pip="noglob pip"
+alias pytest="noglob pytest"
 
