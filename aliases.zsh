@@ -10,4 +10,5 @@ alias gcou='git checkout upstream/main'
 alias k='kubectl'
 alias pip="noglob pip"
 alias pytest="noglob pytest"
+alias grbu='git rebase upstream/main'
 
