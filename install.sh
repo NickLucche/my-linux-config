@@ -23,7 +23,7 @@ if ! command -v python &> /dev/null && command -v python3 &> /dev/null; then
     echo "python not found, aliasing python3 to python"
     echo "alias python=python3" >> $HOME/.zshrc
 fi
-
+# TODO link instead of copying so you can commit changes
 echo "Overwriting .gitconfig. You can find the original at $HOME/.gitconfig.old"
 cp $HOME/.gitconfig $HOME/.gitconfig.old
 cp .gitconfig $HOME/.gitconfig
@@ -117,5 +117,27 @@ else
             echo "Added ~/.local/bin to PATH in .zshrc"
         fi
     fi
+fi
+
+# Add zsh auto-switch to bashrc for environments that don't allow chsh
+echo "Configuring bashrc to auto-switch to zsh..."
+BASHRC="$HOME/.bashrc"
+ZSH_SWITCH_MARKER="# Auto-switch to zsh (added by install script)"
+
+if [ ! -f "$BASHRC" ]; then
+    echo "ERROR: $BASHRC not found. Cannot add zsh auto-switch."
+    exit 1
+fi
+
+if ! grep -q "$ZSH_SWITCH_MARKER" "$BASHRC"; then
+    echo "" >> "$BASHRC"
+    echo "$ZSH_SWITCH_MARKER" >> "$BASHRC"
+    echo '# Only switch to zsh if the shell is interactive' >> "$BASHRC"
+    echo 'if [ -n "$PS1" ]; then' >> "$BASHRC"
+    echo '    exec zsh' >> "$BASHRC"
+    echo 'fi' >> "$BASHRC"
+    echo "Added zsh auto-switch to $BASHRC"
+else
+    echo "zsh auto-switch already present in $BASHRC"
 fi
 
