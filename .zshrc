@@ -75,6 +75,15 @@ plugins=(git zsh-autosuggestions zsh-fzf-history-search autoswitch_virtualenv al
 
 source $ZSH/oh-my-zsh.sh
 
+# Accept SSH_ALIAS via LC_PROMPT_ALIAS to display alias name in prompt
+if [[ -n "$LC_PROMPT_ALIAS" ]]; then
+  # Success! Use the alias name
+  PROMPT="%{$fg[cyan]%}%n@$LC_PROMPT_ALIAS%{$reset_color%} ${PROMPT}"
+elif [[ -n "$SSH_CONNECTION" ]]; then
+  # Fallback to the real short hostname if the locale variable wasn't passed
+  PROMPT="%{$fg[green]%}%n@%m%{$reset_color%} ${PROMPT}"
+fi
+
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
