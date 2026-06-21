@@ -1,4 +1,8 @@
 #!/bin/bash
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 bash .oh-my-zsh/tools/install.sh
 
 export DEBIAN_FRONTEND=noninteractive
@@ -119,6 +123,9 @@ else
     fi
 fi
 
+echo "Installing Neovim Python development setup..."
+bash install-neovim.sh
+
 # Add zsh auto-switch to bashrc for environments that don't allow chsh
 echo "Configuring bashrc to auto-switch to zsh..."
 BASHRC="$HOME/.bashrc"
@@ -140,4 +147,3 @@ if ! grep -q "$ZSH_SWITCH_MARKER" "$BASHRC"; then
 else
     echo "zsh auto-switch already present in $BASHRC"
 fi
-

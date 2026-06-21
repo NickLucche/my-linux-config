@@ -31,3 +31,8 @@
 
 # This is inside subrepo so it cant be tracked normally
 !aliases.zsh
+
+# Neovim Python development setup
+!install-neovim.sh
+!nvim/
+!nvim/**
