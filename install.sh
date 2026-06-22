@@ -13,6 +13,9 @@ echo "Copying plugins from $SOURCE_DIR to $DEST_DIR..."
 
 mkdir -p "$DEST_DIR"
 
+# Clean destination first to avoid merging with old content
+rm -rf "$DEST_DIR"/*
+
 for dir in "$SOURCE_DIR"/*/; do
     [ -d "$dir" ] || continue  # Skip non-directories
     plugin_name=$(basename "$dir")
