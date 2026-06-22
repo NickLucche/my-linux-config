@@ -52,40 +52,113 @@ install_system_deps() {
 }
 
 neovim_asset_name() {
-    case "$(uname -m)" in
-        x86_64|amd64) echo "nvim-linux-x86_64.tar.gz" ;;
-        aarch64|arm64) echo "nvim-linux-arm64.tar.gz" ;;
+    local os arch
+    os="$(uname -s)"
+    arch="$(uname -m)"
+    
+    case "$os" in
+        Darwin)
+            case "$arch" in
+                x86_64) echo "nvim-macos-x86_64.tar.gz" ;;
+                arm64) echo "nvim-macos-arm64.tar.gz" ;;
+                *) 
+                    echo "Unsupported macOS CPU architecture: $arch" >&2
+                    return 1
+                    ;;
+            esac
+            ;;
+        Linux)
+            case "$arch" in
+                x86_64|amd64) echo "nvim-linux-x86_64.tar.gz" ;;
+                aarch64|arm64) echo "nvim-linux-arm64.tar.gz" ;;
+                *) 
+                    echo "Unsupported Linux CPU architecture: $arch" >&2
+                    return 1
+                    ;;
+            esac
+            ;;
         *)
-            echo "Unsupported CPU architecture: $(uname -m)" >&2
+            echo "Unsupported OS: $os" >&2
             return 1
             ;;
     esac
 }
 
 install_neovim() {
-    local asset url tmpdir extracted_dir
-    asset="$(neovim_asset_name)"
+    local os arch asset url tmpdir extracted_dir
+    os="$(uname -s)"
+    arch="$(uname -m)"
+    tmpdir=""
+    
+    case "$os" in
+        Darwin)
+            # Use Homebrew on macOS if available
+            if command -v brew >/dev/null 2>&1; then
+                echo "Installing Neovim via Homebrew"
+                brew install --force neovim
+                NVIM_ROOT="$(brew --prefix neovim)/lib/nvim"
+                mkdir -p "$LOCAL_BIN"
+                ln -sfn "$(brew --prefix neovim)/bin/nvim" "$LOCAL_BIN/nvim"
+                echo "Installed Neovim via Homebrew to $NVIM_ROOT"
+                return 0
+            else
+                # Fallback: download macOS binary directly
+                echo "Homebrew not found. Downloading macOS Neovim binary directly."
+                asset="$(neovim_asset_name)"
+                
+                if [ "$NVIM_VERSION" = "latest" ]; then
+                    url="https://github.com/neovim/neovim/releases/latest/download/$asset"
+                else
+                    url="https://github.com/neovim/neovim/releases/download/$NVIM_VERSION/$asset"
+                fi
 
-    if [ "$NVIM_VERSION" = "latest" ]; then
-        url="https://github.com/neovim/neovim/releases/latest/download/$asset"
-    else
-        url="https://github.com/neovim/neovim/releases/download/$NVIM_VERSION/$asset"
-    fi
+                tmpdir="$(mktemp -d)"
 
-    tmpdir="$(mktemp -d)"
-    trap 'rm -rf "$tmpdir"' RETURN
+                echo "Downloading Neovim from $url"
+                curl -fL "$url" -o "$tmpdir/$asset"
+                # On macOS, need to clear xattr to avoid "unknown developer" warning
+                xattr -c "$tmpdir/$asset" 2>/dev/null || true
+                tar -xzf "$tmpdir/$asset" -C "$tmpdir"
+                extracted_dir="$tmpdir/${asset%.tar.gz}"
 
-    echo "Downloading Neovim from $url"
-    curl -fL "$url" -o "$tmpdir/$asset"
-    tar -xzf "$tmpdir/$asset" -C "$tmpdir"
-    extracted_dir="$tmpdir/${asset%.tar.gz}"
+                rm -rf "$NVIM_ROOT"
+                mkdir -p "$(dirname "$NVIM_ROOT")" "$LOCAL_BIN"
+                mv "$extracted_dir" "$NVIM_ROOT"
+                ln -sfn "$NVIM_ROOT/bin/nvim" "$LOCAL_BIN/nvim"
 
-    rm -rf "$NVIM_ROOT"
-    mkdir -p "$(dirname "$NVIM_ROOT")" "$LOCAL_BIN"
-    mv "$extracted_dir" "$NVIM_ROOT"
-    ln -sfn "$NVIM_ROOT/bin/nvim" "$LOCAL_BIN/nvim"
+                rm -rf "$tmpdir"
+                echo "Installed Neovim to $NVIM_ROOT"
+            fi
+            ;;
+        Linux)
+            asset="$(neovim_asset_name)"
+            
+            if [ "$NVIM_VERSION" = "latest" ]; then
+                url="https://github.com/neovim/neovim/releases/latest/download/$asset"
+            else
+                url="https://github.com/neovim/neovim/releases/download/$NVIM_VERSION/$asset"
+            fi
 
-    echo "Installed Neovim to $NVIM_ROOT"
+            tmpdir="$(mktemp -d)"
+
+            echo "Downloading Neovim from $url"
+            curl -fL "$url" -o "$tmpdir/$asset"
+            tar -xzf "$tmpdir/$asset" -C "$tmpdir"
+            extracted_dir="$tmpdir/${asset%.tar.gz}"
+
+            rm -rf "$NVIM_ROOT"
+            mkdir -p "$(dirname "$NVIM_ROOT")" "$LOCAL_BIN"
+            mv "$extracted_dir" "$NVIM_ROOT"
+            ln -sfn "$NVIM_ROOT/bin/nvim" "$LOCAL_BIN/nvim"
+
+            rm -rf "$tmpdir"
+            echo "Installed Neovim to $NVIM_ROOT"
+            ;;
+        *)
+            echo "Unsupported OS for Neovim installation: $os" >&2
+            return 1
+            ;;
+    esac
 }
 
 ensure_uv() {
