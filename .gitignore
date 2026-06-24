@@ -36,3 +36,4 @@
 !install-neovim.sh
 !nvim/
 !nvim/**
+!sbatch**
