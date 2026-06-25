@@ -30,6 +30,27 @@ if ! command -v python &> /dev/null && command -v python3 &> /dev/null; then
     echo "python not found, aliasing python3 to python"
     echo "alias python=python3" >> $HOME/.zshrc
 fi
+
+# Add custom functions for node and container attachment
+echo "Adding node and container attachment functions to .zshrc..."
+cat >> $HOME/.zshrc << 'EOF'
+
+function node_attach() {
+    # Attach to first allocated node
+    ssh $(squeue --me --json | jq -r .jobs[0].nodes)
+}
+
+function container_attach() {
+    # Attach to last container running on this machine
+    enroot exec -- $(enroot list -f | tail -n 1 |  awk '{print $2}') /bin/bash
+}
+
+function remote_container_attach() {
+    # Attach to last container running on first allocated node
+    ssh -t $(squeue --me --json | jq -r .jobs[0].nodes) 'enroot exec -- $(enroot list -f | tail -n 1 |  awk '\''{print $2}'\'') /bin/bash'
+}
+EOF
+
 # TODO link instead of copying so you can commit changes
 echo "Overwriting .gitconfig. You can find the original at $HOME/.gitconfig.old"
 cp $HOME/.gitconfig $HOME/.gitconfig.old
