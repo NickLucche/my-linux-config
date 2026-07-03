@@ -38,12 +38,21 @@ install_system_deps() {
 
     case "$os_id" in
         fedora)
-            sudo dnf install -y curl git unzip tar gzip ripgrep fd-find gcc make
+            if command -v sudo >/dev/null 2>&1; then
+                sudo dnf install -y curl git unzip tar gzip ripgrep fd-find gcc make
+            else
+                dnf install -y curl git unzip tar gzip ripgrep fd-find gcc make
+            fi
             ;;
         *)
             if [ -n "$deb_variant" ]; then
-                sudo apt-get update -y
-                sudo apt-get install -y curl git unzip tar gzip ripgrep fd-find gcc make
+                if command -v sudo >/dev/null 2>&1; then
+                    sudo apt-get update -y
+                    sudo apt-get install -y curl git unzip tar gzip ripgrep fd-find gcc make
+                else
+                    apt-get update -y
+                    apt-get install -y curl git unzip tar gzip ripgrep fd-find gcc make
+                fi
             else
                 echo "Unsupported or undetected distro. Install curl, git, unzip, tar, gzip, ripgrep, fd, gcc, and make manually."
             fi

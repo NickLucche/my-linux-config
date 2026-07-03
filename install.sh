@@ -33,6 +33,7 @@ fi
 
 # Add custom functions for node and container attachment
 echo "Adding node and container attachment functions to .zshrc..."
+echo "export PATH=$PATH:$HOME/.cargo/bin/" >> $HOME/.zshrc
 cat >> $HOME/.zshrc << 'EOF'
 
 function node_attach() {

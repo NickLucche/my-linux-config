@@ -13,6 +13,7 @@ alias pytest="noglob pytest"
 alias grbu='git rebase upstream/main'
 alias gdu='git diff upstream/main'
 alias ng='noglob'
+alias mls='mayo jobs list'
 
 # Define a function to automatically set the SSH_ALIAS and then connect so that you can prepend name_of_server to prompt
 function ssh() {
