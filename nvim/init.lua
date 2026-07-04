@@ -67,12 +67,23 @@ require("lazy").setup({
   },
   {
     "nvim-treesitter/nvim-treesitter",
+    branch = "master",
+    build = ":TSUpdate",
     config = function()
-      vim.api.nvim_create_autocmd("FileType", {
-        pattern = { "python", "lua", "bash", "json", "toml", "yaml", "markdown" },
-        callback = function()
-          pcall(vim.treesitter.start)
-        end,
+      require("nvim-treesitter.configs").setup({
+        ensure_installed = {
+          "python",
+          "lua",
+          "bash",
+          "json",
+          "toml",
+          "yaml",
+          "markdown",
+          "markdown_inline",
+        },
+        auto_install = true,
+        highlight = { enable = true },
+        indent = { enable = true },
       })
     end,
   },
@@ -175,6 +186,52 @@ require("lazy").setup({
       })
 
       vim.lsp.enable({ "basedpyright", "ruff" })
+    end,
+  },
+  {
+    "mfussenegger/nvim-dap-python",
+    dependencies = {
+      "mfussenegger/nvim-dap",
+      {
+        "rcarriga/nvim-dap-ui",
+        dependencies = { "nvim-neotest/nvim-nio" },
+      },
+    },
+    config = function()
+      local dap = require("dap")
+      local dapui = require("dapui")
+      dapui.setup()
+
+      -- Resolve a python that has debugpy available (installed via `uv tool install debugpy`).
+      local function debugpy_python()
+        local candidates = {
+          vim.fn.expand("~/.local/share/uv/tools/debugpy/bin/python"),
+          vim.fn.exepath("python3"),
+          vim.fn.exepath("python"),
+        }
+        for _, p in ipairs(candidates) do
+          if p ~= "" and vim.fn.executable(p) == 1 then
+            return p
+          end
+        end
+        return "python3"
+      end
+
+      require("dap-python").setup(debugpy_python())
+
+      dap.listeners.before.attach.dapui_config = function() dapui.open() end
+      dap.listeners.before.launch.dapui_config = function() dapui.open() end
+      dap.listeners.before.event_terminated.dapui_config = function() dapui.close() end
+      dap.listeners.before.event_exited.dapui_config = function() dapui.close() end
+
+      vim.keymap.set("n", "<leader>db", dap.toggle_breakpoint, { desc = "Toggle breakpoint" })
+      vim.keymap.set("n", "<leader>dc", dap.continue, { desc = "Continue / start debug" })
+      vim.keymap.set("n", "<leader>di", dap.step_into, { desc = "Step into" })
+      vim.keymap.set("n", "<leader>do", dap.step_over, { desc = "Step over" })
+      vim.keymap.set("n", "<leader>dO", dap.step_out, { desc = "Step out" })
+      vim.keymap.set("n", "<leader>dr", dap.repl.toggle, { desc = "Toggle REPL" })
+      vim.keymap.set("n", "<leader>du", dapui.toggle, { desc = "Toggle DAP UI" })
+      vim.keymap.set("n", "<leader>dt", require("dap-python").test_method, { desc = "Debug test method" })
     end,
   },
 })
