@@ -1,0 +1,9 @@
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+export PATH=$PATH:$HOME/bin:$HOME/.local/bin:$HOME/.local/opt/nvim/bin
+
+# Local secrets (HF_TOKEN, API keys, SLURM account vars, ...). Sourced here in
+# .zshenv so they land in EVERY zsh (interactive or not) and are inherited by
+# child processes and sbatch jobs. This single file holds all tokens.
+# NOT tracked by git/chezmoi — carry it onto each box out-of-band.
+# See secrets.env.example in the dotfiles repo for the expected keys.
+[ -f "$HOME/.config/dev-env/secrets.env" ] && source "$HOME/.config/dev-env/secrets.env"

@@ -1,0 +1,57 @@
+# Managed by chezmoi. Replaces the old git submodules + install-neovim.sh.
+# `chezmoi apply` clones/refreshes these automatically (every 168h = weekly).
+
+{{- $nvim := "" -}}
+{{- if eq .chezmoi.os "linux" -}}
+{{-   $nvim = (eq .chezmoi.arch "amd64" | ternary "nvim-linux-x86_64" "nvim-linux-arm64") -}}
+{{- else if eq .chezmoi.os "darwin" -}}
+{{-   $nvim = (eq .chezmoi.arch "amd64" | ternary "nvim-macos-x86_64" "nvim-macos-arm64") -}}
+{{- end -}}
+
+# ---- oh-my-zsh core ----
+[".oh-my-zsh"]
+    type = "git-repo"
+    url = "https://github.com/ohmyzsh/ohmyzsh.git"
+    refreshPeriod = "168h"
+    [".oh-my-zsh".clone]
+        args = ["--depth=1"]
+    [".oh-my-zsh".pull]
+        args = ["--ff-only"]
+
+# ---- zsh plugins (live under $ZSH_CUSTOM = ~/.config/omz-custom) ----
+[".config/omz-custom/plugins/zsh-autosuggestions"]
+    type = "git-repo"
+    url = "https://github.com/zsh-users/zsh-autosuggestions.git"
+    refreshPeriod = "168h"
+    [".config/omz-custom/plugins/zsh-autosuggestions".clone]
+        args = ["--depth=1"]
+
+[".config/omz-custom/plugins/zsh-fzf-history-search"]
+    type = "git-repo"
+    url = "https://github.com/joshskidmore/zsh-fzf-history-search.git"
+    refreshPeriod = "168h"
+    [".config/omz-custom/plugins/zsh-fzf-history-search".clone]
+        args = ["--depth=1"]
+
+[".config/omz-custom/plugins/autoswitch_virtualenv"]
+    type = "git-repo"
+    url = "https://github.com/MichaelAquilina/zsh-autoswitch-virtualenv.git"
+    refreshPeriod = "168h"
+    [".config/omz-custom/plugins/autoswitch_virtualenv".clone]
+        args = ["--depth=1"]
+
+[".config/omz-custom/plugins/alias-tips"]
+    type = "git-repo"
+    url = "https://github.com/djui/alias-tips.git"
+    refreshPeriod = "168h"
+    [".config/omz-custom/plugins/alias-tips".clone]
+        args = ["--depth=1"]
+
+# ---- Neovim binary -> ~/.local/opt/nvim (PATH set in dot_zshenv) ----
+{{ if $nvim -}}
+[".local/opt/nvim"]
+    type = "archive"
+    url = "https://github.com/neovim/neovim/releases/latest/download/{{ $nvim }}.tar.gz"
+    stripComponents = 1
+    refreshPeriod = "168h"
+{{- end }}

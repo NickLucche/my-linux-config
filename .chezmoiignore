@@ -1,0 +1,4 @@
+# Files that live in the source repo but should NOT be applied to $HOME.
+README.md
+secrets.env.example
+.claude

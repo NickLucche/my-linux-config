@@ -1,39 +1,7 @@
-# Ignore everything
-*
+# Real secrets must never be committed. Only the .example is tracked.
+secrets.env
+.config/dev-env/secrets.env
 
-# But not these files...
-!.gitignore
-# Track zsh configuration
-!.zshrc
-!.zshenv
-!.zprofile
-!.zlogin
-!.zlogout
-!.gitconfig
-
-# Oh My Zsh custom directories
-!.oh-my-zsh/
-.oh-my-zsh/**
-.oh-my-zsh/.git/
-!plugins/
-!plugins/**
-
-!.oh-my-zsh/custom/
-!.oh-my-zsh/custom/themes/**
-!.oh-my-zsh/custom/themes/
-!.oh-my-zsh/custom/plugins/
-!.oh-my-zsh/custom/plugins/**
-!.oh-my-zsh/themes/
-!.oh-my-zsh/themes/**
-
-!.oh-my-zsh/plugins/
-!.oh-my-zsh/plugins/**
-
-# This is inside subrepo so it cant be tracked normally
-!aliases.zsh
-
-# Neovim Python development setup
-!install-neovim.sh
-!nvim/
-!nvim/**
-!sbatch**
+# Editor / OS cruft
+*.swp
+.DS_Store

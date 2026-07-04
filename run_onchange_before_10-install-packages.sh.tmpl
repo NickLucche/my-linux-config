@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# Managed by chezmoi. Re-runs automatically whenever this file's rendered
+# content changes (e.g. you edit the package list below).
+#
+# Installs system packages + user tooling. Best-effort: on a box without sudo
+# it warns and continues so the rest of `chezmoi apply` still succeeds.
+set -euo pipefail
+
+# System packages. jq is required by the SLURM helper functions in functions.zsh.
+PACKAGES="zsh git curl unzip tar gzip ripgrep fd-find gcc make jq"
+
+log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33mwarning:\033[0m %s\n' "$*" >&2; }
+
+# --- privilege helper -------------------------------------------------------
+SUDO=""
+if [ "$(id -u)" -ne 0 ]; then
+    if command -v sudo >/dev/null 2>&1; then
+        SUDO="sudo"
+    else
+        warn "no sudo and not root; skipping system package install."
+        warn "ensure these are present: $PACKAGES"
+    fi
+fi
+
+# --- distro detection (ported from the old install.sh) ----------------------
+detect_os_id() {
+    if [ -f /etc/os-release ]; then . /etc/os-release; echo "${ID:-}"; else echo ""; fi
+}
+detect_debian_variant() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        case "${ID:-}" in ubuntu|debian) echo "$ID"; return ;; esac
+        case "${ID_LIKE:-}" in *ubuntu*) echo "ubuntu"; return ;; *debian*) echo "debian"; return ;; esac
+    fi
+    echo ""
+}
+
+OS_UNAME="$(uname -s)"
+OS_ID="$(detect_os_id)"
+DEB_VARIANT="$(detect_debian_variant)"
+
+# --- system packages --------------------------------------------------------
+install_system_packages() {
+    if [ "$OS_UNAME" = "Darwin" ]; then
+        if command -v brew >/dev/null 2>&1; then
+            log "Installing packages via Homebrew"
+            brew install git ripgrep fd jq gnu-tar || warn "some brew packages failed"
+        else
+            warn "Homebrew not found on macOS; skipping system packages."
+        fi
+        return
+    fi
+
+    # Linux: need sudo (or root) to install
+    if [ "$(id -u)" -ne 0 ] && [ -z "$SUDO" ]; then
+        return
+    fi
+
+    case "$OS_ID" in
+        fedora|rhel|centos)
+            log "Installing packages via dnf"
+            $SUDO dnf install -y $PACKAGES || warn "dnf install failed"
+            ;;
+        *)
+            if [ -n "$DEB_VARIANT" ]; then
+                log "Installing packages via apt"
+                export DEBIAN_FRONTEND=noninteractive
+                $SUDO apt-get update -y || warn "apt update failed"
+                $SUDO apt-get install -y $PACKAGES || warn "apt install failed"
+            else
+                warn "Unsupported distro; install manually: $PACKAGES"
+            fi
+            ;;
+    esac
+}
+
+# --- GitHub CLI (ported from old install.sh) --------------------------------
+install_gh() {
+    if command -v gh >/dev/null 2>&1; then log "gh already installed"; return; fi
+    if [ "$OS_UNAME" = "Darwin" ]; then
+        command -v brew >/dev/null 2>&1 && brew install gh || warn "install gh manually"
+        return
+    fi
+    if [ "$(id -u)" -ne 0 ] && [ -z "$SUDO" ]; then warn "no sudo; skipping gh"; return; fi
+    case "$OS_ID" in
+        fedora|rhel|centos)
+            log "Installing gh via dnf"
+            $SUDO dnf install -y dnf-plugins-core || true
+            $SUDO dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo || true
+            $SUDO dnf install -y gh || warn "gh install failed"
+            ;;
+        *)
+            if [ -n "$DEB_VARIANT" ]; then
+                log "Installing gh via apt"
+                $SUDO mkdir -p -m 755 /etc/apt/keyrings
+                out=$(mktemp)
+                curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o "$out"
+                cat "$out" | $SUDO tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
+                $SUDO chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+                echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+                    | $SUDO tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+                $SUDO apt-get update -y && $SUDO apt-get install -y gh || warn "gh install failed"
+            else
+                warn "install gh manually: https://cli.github.com/"
+            fi
+            ;;
+    esac
+}
+
+# --- uv + Python editor tooling ---------------------------------------------
+install_uv_tools() {
+    if ! command -v uv >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/uv" ]; then
+        log "Installing uv"
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    fi
+    UV="$(command -v uv || echo "$HOME/.local/bin/uv")"
+    if [ -x "$UV" ]; then
+        log "Installing Python editor tools (basedpyright, ruff, debugpy)"
+        "$UV" tool install --force basedpyright
+        "$UV" tool install --force ruff
+        "$UV" tool install --force debugpy
+    else
+        warn "uv not available; skipping Python editor tools"
+    fi
+}
+
+# macOS: clear quarantine xattr on the nvim binary fetched by the external
+clear_nvim_quarantine() {
+    if [ "$OS_UNAME" = "Darwin" ] && [ -d "$HOME/.local/opt/nvim" ]; then
+        xattr -cr "$HOME/.local/opt/nvim" 2>/dev/null || true
+    fi
+}
+
+install_system_packages
+install_gh
+install_uv_tools
+clear_nvim_quarantine
+
+log "Package setup complete."
