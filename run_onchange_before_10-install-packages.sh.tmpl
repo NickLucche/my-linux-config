@@ -52,6 +52,19 @@ install_system_packages() {
         return
     fi
 
+    # Skip entirely (and avoid a sudo prompt) if every tool is already present.
+    # Commands are checked rather than package names (ripgrep->rg, fd-find->fd).
+    local missing=0
+    for cmd in zsh git curl unzip tar gzip gcc make jq rg; do
+        command -v "$cmd" >/dev/null 2>&1 || { missing=1; break; }
+    done
+    # fd ships as `fd` or `fdfind` depending on distro
+    command -v fd >/dev/null 2>&1 || command -v fdfind >/dev/null 2>&1 || missing=1
+    if [ "$missing" -eq 0 ]; then
+        log "All system packages already present; skipping apt/dnf."
+        return
+    fi
+
     # Linux: need sudo (or root) to install
     if [ "$(id -u)" -ne 0 ] && [ -z "$SUDO" ]; then
         return
