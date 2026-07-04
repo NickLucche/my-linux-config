@@ -21,9 +21,17 @@ fi
 cat >> "$BASHRC" <<'EOF'
 
 # Auto-switch to zsh (added by chezmoi)
-# Only switch for interactive shells, and avoid recursion.
-if [ -n "$PS1" ] && [ -z "$ZSH_VERSION" ] && command -v zsh >/dev/null 2>&1; then
-    exec zsh
-fi
+# `case $- in *i*)` matches INTERACTIVE shells only. This is what keeps it safe:
+# non-interactive contexts that still source ~/.bashrc — `ssh host cmd`, srun/
+# sbatch job steps, scp, rsync — have no 'i' in $-, so they never exec zsh.
+# (Using $PS1 here instead is a known footgun that breaks srun.)
+case $- in
+  *i*)
+    if [ -z "$ZSH_VERSION" ] && command -v zsh >/dev/null 2>&1; then
+      export SHELL="$(command -v zsh)"
+      exec zsh
+    fi
+    ;;
+esac
 EOF
 echo "Added zsh auto-switch to $BASHRC"
