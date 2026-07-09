@@ -1,24 +1,38 @@
 #!/usr/bin/env bash
-# Managed by chezmoi. Runs once per machine.
-# On boxes where you can't `chsh` to zsh, make interactive bash exec zsh.
+# Managed by chezmoi. Runs once per machine. Configures ~/.bashrc for boxes
+# where bash is the entry shell:
+#   1. source the local dev-env secrets file, so bash sessions (and srun/ssh
+#      command steps that read ~/.bashrc) get tokens even without switching to zsh
+#   2. auto-switch interactive bash to zsh when possible
+# Both blocks are marker-guarded so re-runs never duplicate them.
 set -euo pipefail
 
 BASHRC="$HOME/.bashrc"
-MARKER="# Auto-switch to zsh (added by chezmoi)"
-
 [ -f "$BASHRC" ] || touch "$BASHRC"
 
-if grep -qF "$MARKER" "$BASHRC"; then
+# --- 1. secrets sourcing ----------------------------------------------------
+SECRETS_MARKER="# Load dev-env secrets (added by chezmoi)"
+if grep -qF "$SECRETS_MARKER" "$BASHRC"; then
+    echo "secrets sourcing already present in $BASHRC"
+else
+    cat >> "$BASHRC" <<'EOF'
+
+# Load dev-env secrets (added by chezmoi)
+# Single file of tokens (HF_TOKEN, API keys, SLURM account vars, ...), carried
+# out-of-band and NOT tracked by git. Mirrors what ~/.zshenv does for zsh.
+[ -f "$HOME/.config/dev-env/secrets.env" ] && . "$HOME/.config/dev-env/secrets.env"
+EOF
+    echo "Added secrets sourcing to $BASHRC"
+fi
+
+# --- 2. bash -> zsh auto-switch ---------------------------------------------
+SWITCH_MARKER="# Auto-switch to zsh (added by chezmoi)"
+if grep -qF "$SWITCH_MARKER" "$BASHRC"; then
     echo "zsh auto-switch already present in $BASHRC"
-    exit 0
-fi
-
-if ! command -v zsh >/dev/null 2>&1; then
+elif ! command -v zsh >/dev/null 2>&1; then
     echo "zsh not found; skipping bash->zsh auto-switch (install zsh, then re-run 'chezmoi apply')." >&2
-    exit 0
-fi
-
-cat >> "$BASHRC" <<'EOF'
+else
+    cat >> "$BASHRC" <<'EOF'
 
 # Auto-switch to zsh (added by chezmoi)
 # `case $- in *i*)` matches INTERACTIVE shells only. This is what keeps it safe:
@@ -34,4 +48,5 @@ case $- in
     ;;
 esac
 EOF
-echo "Added zsh auto-switch to $BASHRC"
+    echo "Added zsh auto-switch to $BASHRC"
+fi
