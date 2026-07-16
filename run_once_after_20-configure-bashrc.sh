@@ -10,6 +10,23 @@ set -euo pipefail
 BASHRC="$HOME/.bashrc"
 [ -f "$BASHRC" ] || touch "$BASHRC"
 
+# --- 0. PATH (mirror dot_zshenv so bash sessions find our tools first) -------
+PATH_MARKER="# Dev-env PATH (added by chezmoi)"
+if grep -qF "$PATH_MARKER" "$BASHRC"; then
+    echo "dev-env PATH already present in $BASHRC"
+else
+    cat >> "$BASHRC" <<'EOF'
+
+# Dev-env PATH (added by chezmoi)
+# Prepend our dirs so the nvim/uv/etc. we install win over older system copies.
+case ":$PATH:" in
+  *":$HOME/.local/opt/nvim/bin:"*) ;;
+  *) export PATH="$HOME/.local/opt/nvim/bin:$HOME/.local/bin:$HOME/bin:$PATH" ;;
+esac
+EOF
+    echo "Added dev-env PATH to $BASHRC"
+fi
+
 # --- 1. secrets sourcing ----------------------------------------------------
 SECRETS_MARKER="# Load dev-env secrets (added by chezmoi)"
 if grep -qF "$SECRETS_MARKER" "$BASHRC"; then
