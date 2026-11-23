@@ -8,6 +8,17 @@
 {{-   $nvim = (eq .chezmoi.arch "amd64" | ternary "nvim-macos-x86_64" "nvim-macos-arm64") -}}
 {{- end -}}
 
+{{- /* dust: release assets embed the version, so pin it here and bump manually.
+       Linux uses the static musl build so it runs on old-glibc HPC nodes. */ -}}
+{{- $dustVersion := "1.2.7" -}}
+{{- $dustArch := (eq .chezmoi.arch "amd64" | ternary "x86_64" "aarch64") -}}
+{{- $dustTarget := "" -}}
+{{- if eq .chezmoi.os "linux" -}}
+{{-   $dustTarget = printf "%s-unknown-linux-musl" $dustArch -}}
+{{- else if eq .chezmoi.os "darwin" -}}
+{{-   $dustTarget = printf "%s-apple-darwin" $dustArch -}}
+{{- end -}}
+
 # ---- oh-my-zsh core ----
 [".oh-my-zsh"]
     type = "git-repo"
@@ -54,4 +65,14 @@
     url = "https://github.com/neovim/neovim/releases/latest/download/{{ $nvim }}.tar.gz"
     stripComponents = 1
     refreshPeriod = "168h"
+{{- end }}
+
+# ---- dust (fast parallel du) -> ~/.local/bin/dust ----
+{{ if $dustTarget -}}
+[".local/bin/dust"]
+    type = "archive-file"
+    url = "https://github.com/bootandy/dust/releases/download/v{{ $dustVersion }}/dust-v{{ $dustVersion }}-{{ $dustTarget }}.tar.gz"
+    path = "dust"
+    stripComponents = 1
+    executable = true
 {{- end }}
